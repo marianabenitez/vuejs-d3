@@ -21,7 +21,7 @@ export default {
       rx: 100,
     },
     initialZoom: 1,
-    zoom: true,
+    allowZoom: true,
     grayscale: true,
     enableExpand: true,
     rendering: {},
@@ -129,7 +129,7 @@ export default {
         .attr("width", width)
         .attr("height", height)
         .call(this.behaviors.zoom)
-        .attr("cursor", this.zoom ? "move" : "default");
+        .attr("cursor", this.allowZoom ? "move" : "default");
 
       //Add container g element
       this.rendering.chart = this.rendering.svg.patternify({
@@ -524,7 +524,7 @@ export default {
       this.renderData(node);
     },
     zoomed(target) {
-      if ((this.zoom = false)) return;
+      if (!this.allowZoom) return;
 
       let transform = target.transform;
       this.behaviors.lastTransform = transform;
