@@ -92,13 +92,19 @@ export default {
       let height = containerRect.height;
 
       //Calculated properties
-      this.rendering.depth = this.node.height + 100;
+      this.rendering.depth = this.node.height + 60;
       this.rendering.centerX = width / 2;
 
+      let vm = this;
       this.rendering.treemap = d3
         .tree()
         .size([width, height])
-        .nodeSize([this.node.width + 50, this.node.height]);
+        .nodeSize([this.node.width, this.node.height])
+        .separation(function(a, b) {
+          return a.parent == vm.rendering.root && b.parent == vm.rendering.root
+            ? 2
+            : 1;
+        });
       this.behaviors.zoom = d3.zoom().on("zoom", this.zoomed);
 
       //****************** ROOT node work ************************
