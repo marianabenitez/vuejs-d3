@@ -384,7 +384,10 @@ export default {
         .style("height", `${this.node.height}px`)
         .style("display", "grid")
         .style("grid-template-rows", `${this.image.height}px auto`)
-        .html((d) => `<div class="node-text-area"><b>${d.data.name}</b><br/>${d.data.jobTitle}</div>`);
+        .html(
+          (d) =>
+            `<div class="node-text-area"><b>${d.data.name}</b><br/>${d.data.jobTitle}</div>`
+        );
 
       // Node images
       let nodeImageGroups = nodeEnter.patternify({
@@ -572,13 +575,9 @@ export default {
       let path = `
             M ${x} ${y}
             L ${x} ${y + h * yrvs}
-            C ${x} ${y + h * yrvs + r * yrvs} ${x} ${y +
-        h * yrvs +
-        r * yrvs} ${x + r * xrvs} ${y + h * yrvs + r * yrvs}
+            L ${x} ${y + h * yrvs + r * yrvs}
             L ${x + w * xrvs + r * xrvs} ${y + h * yrvs + r * yrvs}
-            C ${ex}  ${y + h * yrvs + r * yrvs} ${ex}  ${y +
-        h * yrvs +
-        r * yrvs} ${ex} ${ey - h * yrvs}
+            L ${ex}  ${y + h * yrvs + r * yrvs}
             L ${ex} ${ey}`;
 
       return path;
@@ -636,7 +635,6 @@ export default {
   font-size: 16pt;
   font-weight: bold;
   font-family: "Courier New", Courier, monospace;
-  color: rgb(26, 26, 26);
 }
 .chart-container >>> .grayscale {
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
