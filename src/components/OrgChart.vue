@@ -7,6 +7,7 @@
 <script>
 // this OrgChart was adapted from https://bl.ocks.org/bumbeishvili/09a03b81ae788d2d14f750afe59eb7de
 import * as d3 from "d3";
+import { saveSvgAsPng } from "save-svg-as-png";
 
 export default {
   data: () => ({
@@ -23,7 +24,7 @@ export default {
     initialZoom: 1,
     allowZoom: true,
     grayscale: true,
-    enableExpand: true,
+    enableExpand: false,
     rendering: {},
     behaviors: {},
     data: [
@@ -60,8 +61,102 @@ export default {
   mounted() {
     this.createPatternify();
     this.createChart(this.data);
+    this.saveSvg();
   },
   methods: {
+    async saveSvg() {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
+
+      let styles = getCSSStyles();
+      console.log(styles);
+
+      d3.selectAll(styles).each(function() {
+        let element = this;
+        let computedStyle = getComputedStyle(element, null);
+        for (let i = 0; i < computedStyle.length; i++) {
+          let property = computedStyle.item(i);
+          let value = computedStyle.getPropertyValue(property);
+          element.style[property] = value;
+        }
+      });
+
+      let options = {};
+      options.backgroundColor = "#ffffff";
+      options.canvg = window.canvg; // IE & Edge
+
+      // todo: fix removal of styles for org chart names and titles
+      saveSvgAsPng(d3.select("svg").node(), "orgchart.png", options).then(() => {
+        //clear inline styles
+        d3.selectAll(styles).each(function() {
+          let element = this;
+          let computedStyle = getComputedStyle(element, null);
+          for (let i = 0; i < computedStyle.length; i++) {
+            let property = computedStyle.item(i);
+            element.style.removeProperty(property);
+          }
+        });
+      });
+
+      // adapted from https://jsfiddle.net/c19664p3/10/
+      function getCSSStyles() {
+        let parentElement = d3.select("svg").node();
+        let selectorTextArr = [];
+
+        // Add Parent element Id and Classes to the list
+        selectorTextArr.push("#" + parentElement.id);
+        for (let c = 0; c < parentElement.classList.length; c++)
+          if (!contains("." + parentElement.classList[c], selectorTextArr))
+            selectorTextArr.push("." + parentElement.classList[c]);
+
+        // Add Children element Ids and Classes to the list
+        let nodes = parentElement.getElementsByTagName("*");
+        for (let i = 0; i < nodes.length; i++) {
+          let id = nodes[i].id;
+          if (!contains("#" + id, selectorTextArr))
+            selectorTextArr.push("#" + id);
+
+          let classes = nodes[i].classList;
+          for (let c = 0; c < classes.length; c++)
+            if (!contains("." + classes[c], selectorTextArr))
+              selectorTextArr.push("." + classes[c]);
+        }
+
+        // Extract CSS Rules
+        let extractedCSSText = "";
+        for (let i = 0; i < document.styleSheets.length; i++) {
+          let s = document.styleSheets[i];
+
+          try {
+            if (!s.cssRules) continue;
+          } catch (e) {
+            if (e.name !== "SecurityError") throw e; // for Firefox
+            continue;
+          }
+
+          let cssRules = s.cssRules;
+          for (let r = 0; r < cssRules.length; r++) {
+            try {
+              let classArray = cssRules[r].selectorText.split(" ");
+
+              for (let i = 0; i < classArray.length; i++) {
+                if (contains(classArray[i], selectorTextArr))
+                  extractedCSSText += `${classArray[i]},`;
+              }
+            } catch (e) {
+              continue;
+            }
+          }
+        }
+
+        return extractedCSSText.replace(/,\s*$/, ""); //remove last comma
+
+        function contains(str, arr) {
+          return arr.indexOf(str) === -1 ? false : true;
+        }
+      }
+    },
     createPatternify() {
       d3.selection.prototype.patternify = function(params) {
         let data = params.data || [params.selector];
@@ -282,7 +377,7 @@ export default {
         .remove();
 
       //#endregion [ Filters ]
-
+      
       //#region [ Links ]
 
       // Update the links...
@@ -361,7 +456,7 @@ export default {
         })
         .attr("width", 1e-6)
         .attr("height", 1e-6);
-
+      
       // Add foreignObject element
       let fo = nodeEnter
         .patternify({
@@ -382,12 +477,7 @@ export default {
       })
         .style("width", `${this.node.width}px`)
         .style("height", `${this.node.height}px`)
-        .style("display", "grid")
-        .style("grid-template-rows", `${this.image.height}px auto`)
-        .html(
-          (d) =>
-            `<div class="node-text-area"><b>${d.data.name}</b><br/>${d.data.jobTitle}</div>`
-        );
+        .html((d) => `<div><b>${d.data.name}</b></div><div>${d.data.jobTitle}</div>`);
 
       // Node images
       let nodeImageGroups = nodeEnter.patternify({
@@ -613,18 +703,6 @@ export default {
 .chart-container >>> .node-rect {
   fill: white;
 }
-.chart-container >>> .node-text-area {
-  grid-row-start: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin: auto;
-  text-align: center;
-  font-size: 12pt;
-  padding-left: 3px;
-  padding-right: 3px;
-}
 .chart-container >>> .node-button-circle {
   fill: white;
   stroke: rgb(26, 26, 26);
@@ -635,6 +713,17 @@ export default {
   font-size: 16pt;
   font-weight: bold;
   font-family: "Courier New", Courier, monospace;
+}
+.chart-container >>> .node-foreign-object-div {
+  display: flex;
+  flex-direction: column;
+  justify-content: end;
+  align-items: center;
+  text-align: center;
+  font-size: 12pt;
+  padding-left: 3px;
+  padding-right: 3px;
+  padding-bottom: 20px;
 }
 .chart-container >>> .grayscale {
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
