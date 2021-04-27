@@ -8,6 +8,7 @@
 // this OrgChart was adapted from https://bl.ocks.org/bumbeishvili/09a03b81ae788d2d14f750afe59eb7de
 import * as d3 from "d3";
 import { saveSvgAsPng } from "save-svg-as-png";
+import $ from "jquery";
 
 export default {
   data: () => ({
@@ -31,28 +32,32 @@ export default {
       {
         id: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
         parentId: null,
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name One",
         jobTitle: "Job Title 1",
       },
       {
         id: "5a89746a-e26f-43e0-8675-e821c1924088",
         parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Two",
         jobTitle: "Job Title 2",
       },
       {
         id: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
         parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Three",
         jobTitle: "Job Title 3",
       },
       {
         id: "8f805290-3c86-4a1c-aef7-0ef1faddd0fb",
         parentId: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Four",
         jobTitle: "Job Title 4",
       },
@@ -70,15 +75,27 @@ export default {
       });
 
       let styles = getCSSStyles();
-      console.log(styles);
+      let d3Select = [Object.keys(styles)].join();
 
-      d3.selectAll(styles).each(function() {
+      d3.selectAll(d3Select).each(function() {
         let element = this;
-        let computedStyle = getComputedStyle(element, null);
-        for (let i = 0; i < computedStyle.length; i++) {
-          let property = computedStyle.item(i);
-          let value = computedStyle.getPropertyValue(property);
-          element.style[property] = value;
+        let classArray = $(element)
+          .attr("class")
+          .split(" ");
+
+        for (let i = 0; i < classArray.length; i++) {
+          let index = Object.keys(styles).indexOf(`.${classArray[i]}`);
+          if (index != -1) {
+            let className = Object.keys(styles)[index];
+            let props = styles[className];
+            let iterator = props.keys();
+            let prop = iterator.next().value;
+            while (prop) {
+              let val = props.get(prop);
+              element.style[prop] = val;
+              prop = iterator.next().value;
+            }
+          }
         }
       });
 
@@ -87,44 +104,57 @@ export default {
       options.canvg = window.canvg; // IE & Edge
 
       // todo: fix removal of styles for org chart names and titles
-      saveSvgAsPng(d3.select("svg").node(), "orgchart.png", options).then(() => {
-        //clear inline styles
-        d3.selectAll(styles).each(function() {
-          let element = this;
-          let computedStyle = getComputedStyle(element, null);
-          for (let i = 0; i < computedStyle.length; i++) {
-            let property = computedStyle.item(i);
-            element.style.removeProperty(property);
-          }
-        });
-      });
+      saveSvgAsPng(d3.select("svg").node(), "orgchart.png", options).then(
+        () => {
+          //clear inline styles
+          d3.selectAll(d3Select).each(function() {
+            let element = this;
+            let classArray = $(element)
+              .attr("class")
+              .split(" ");
+
+            for (let i = 0; i < classArray.length; i++) {
+              let index = Object.keys(styles).indexOf(`.${classArray[i]}`);
+              if (index != -1) {
+                let className = Object.keys(styles)[index];
+                let props = styles[className];
+                let iterator = props.keys();
+                let prop = iterator.next().value;
+                while (prop) {
+                  element.style.removeProperty(prop);
+                  prop = iterator.next().value;
+                }
+              }
+            }
+          });
+        }
+      );
 
       // adapted from https://jsfiddle.net/c19664p3/10/
       function getCSSStyles() {
         let parentElement = d3.select("svg").node();
-        let selectorTextArr = [];
+        let selectorList = [];
 
         // Add Parent element Id and Classes to the list
-        selectorTextArr.push("#" + parentElement.id);
+        selectorList.push("#" + parentElement.id);
         for (let c = 0; c < parentElement.classList.length; c++)
-          if (!contains("." + parentElement.classList[c], selectorTextArr))
-            selectorTextArr.push("." + parentElement.classList[c]);
+          if (!contains("." + parentElement.classList[c], selectorList))
+            selectorList.push("." + parentElement.classList[c]);
 
         // Add Children element Ids and Classes to the list
         let nodes = parentElement.getElementsByTagName("*");
         for (let i = 0; i < nodes.length; i++) {
           let id = nodes[i].id;
-          if (!contains("#" + id, selectorTextArr))
-            selectorTextArr.push("#" + id);
+          if (!contains("#" + id, selectorList)) selectorList.push("#" + id);
 
           let classes = nodes[i].classList;
           for (let c = 0; c < classes.length; c++)
-            if (!contains("." + classes[c], selectorTextArr))
-              selectorTextArr.push("." + classes[c]);
+            if (!contains("." + classes[c], selectorList))
+              selectorList.push("." + classes[c]);
         }
 
         // Extract CSS Rules
-        let extractedCSSText = "";
+        let rules = [];
         for (let i = 0; i < document.styleSheets.length; i++) {
           let s = document.styleSheets[i];
 
@@ -141,8 +171,20 @@ export default {
               let classArray = cssRules[r].selectorText.split(" ");
 
               for (let i = 0; i < classArray.length; i++) {
-                if (contains(classArray[i], selectorTextArr))
-                  extractedCSSText += `${classArray[i]},`;
+                if (contains(classArray[i], selectorList)) {
+                  let properties = cssRules[r].cssText
+                    .split("{")[1]
+                    .split("}")[0]
+                    .trim()
+                    .split(";");
+                  let styles = new Map();
+                  for (let j = 0; j < properties.length; j++) {
+                    let prop = properties[j].split(":")[0];
+                    let val = properties[j].split(":")[1];
+                    if (prop) styles.set(prop.trim(), val.trim());
+                  }
+                  rules[classArray[i]] = styles;
+                }
               }
             } catch (e) {
               continue;
@@ -150,11 +192,11 @@ export default {
           }
         }
 
-        return extractedCSSText.replace(/,\s*$/, ""); //remove last comma
+        return rules;
+      }
 
-        function contains(str, arr) {
-          return arr.indexOf(str) === -1 ? false : true;
-        }
+      function contains(str, arr) {
+        return arr.indexOf(str) === -1 ? false : true;
       }
     },
     createPatternify() {
@@ -377,7 +419,7 @@ export default {
         .remove();
 
       //#endregion [ Filters ]
-      
+
       //#region [ Links ]
 
       // Update the links...
@@ -456,7 +498,7 @@ export default {
         })
         .attr("width", 1e-6)
         .attr("height", 1e-6);
-      
+
       // Add foreignObject element
       let fo = nodeEnter
         .patternify({
@@ -476,8 +518,10 @@ export default {
         data: (d) => [d],
       })
         .style("width", `${this.node.width}px`)
-        .style("height", `${this.node.height}px`)
-        .html((d) => `<div><b>${d.data.name}</b></div><div>${d.data.jobTitle}</div>`);
+        .style("height", `${this.node.height-20}px`)
+        .html(
+          (d) => `<div><b>${d.data.name}</b></div><div>${d.data.jobTitle}</div>`
+        );
 
       // Node images
       let nodeImageGroups = nodeEnter.patternify({
@@ -721,9 +765,6 @@ export default {
   align-items: center;
   text-align: center;
   font-size: 12pt;
-  padding-left: 3px;
-  padding-right: 3px;
-  padding-bottom: 20px;
 }
 .chart-container >>> .grayscale {
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
