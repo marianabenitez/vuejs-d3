@@ -1,5 +1,15 @@
 <template>
   <v-container>
+    <v-btn
+      fab
+      dark
+      color="blue"
+      @click="saveAsPng()"
+    >
+      <v-icon dark>
+        mdi-download
+      </v-icon>
+    </v-btn>
     <div class="chart-container"></div>
   </v-container>
 </template>
@@ -7,8 +17,7 @@
 <script>
 // this OrgChart was adapted from https://bl.ocks.org/bumbeishvili/09a03b81ae788d2d14f750afe59eb7de
 import * as d3 from "d3";
-import { saveSvgAsPng } from "save-svg-as-png";
-import $ from "jquery";
+import graphHelper from "@/helpers/graphHelper.js"
 
 export default {
   data: () => ({
@@ -66,138 +75,10 @@ export default {
   mounted() {
     this.createPatternify();
     this.createChart(this.data);
-    this.saveSvg();
   },
   methods: {
-    async saveSvg() {
-      await new Promise((resolve) => {
-        setTimeout(resolve, 1000);
-      });
-
-      let styles = getCSSStyles();
-      let d3Select = [Object.keys(styles)].join();
-
-      d3.selectAll(d3Select).each(function() {
-        let element = this;
-        let classArray = $(element)
-          .attr("class")
-          .split(" ");
-
-        for (let i = 0; i < classArray.length; i++) {
-          let index = Object.keys(styles).indexOf(`.${classArray[i]}`);
-          if (index != -1) {
-            let className = Object.keys(styles)[index];
-            let props = styles[className];
-            let iterator = props.keys();
-            let prop = iterator.next().value;
-            while (prop) {
-              let val = props.get(prop);
-              element.style[prop] = val;
-              prop = iterator.next().value;
-            }
-          }
-        }
-      });
-
-      let options = {};
-      options.backgroundColor = "#ffffff";
-      options.canvg = window.canvg; // IE & Edge
-
-      // todo: fix removal of styles for org chart names and titles
-      saveSvgAsPng(d3.select("svg").node(), "orgchart.png", options).then(
-        () => {
-          //clear inline styles
-          d3.selectAll(d3Select).each(function() {
-            let element = this;
-            let classArray = $(element)
-              .attr("class")
-              .split(" ");
-
-            for (let i = 0; i < classArray.length; i++) {
-              let index = Object.keys(styles).indexOf(`.${classArray[i]}`);
-              if (index != -1) {
-                let className = Object.keys(styles)[index];
-                let props = styles[className];
-                let iterator = props.keys();
-                let prop = iterator.next().value;
-                while (prop) {
-                  element.style.removeProperty(prop);
-                  prop = iterator.next().value;
-                }
-              }
-            }
-          });
-        }
-      );
-
-      // adapted from https://jsfiddle.net/c19664p3/10/
-      function getCSSStyles() {
-        let parentElement = d3.select("svg").node();
-        let selectorList = [];
-
-        // Add Parent element Id and Classes to the list
-        selectorList.push("#" + parentElement.id);
-        for (let c = 0; c < parentElement.classList.length; c++)
-          if (!contains("." + parentElement.classList[c], selectorList))
-            selectorList.push("." + parentElement.classList[c]);
-
-        // Add Children element Ids and Classes to the list
-        let nodes = parentElement.getElementsByTagName("*");
-        for (let i = 0; i < nodes.length; i++) {
-          let id = nodes[i].id;
-          if (!contains("#" + id, selectorList)) selectorList.push("#" + id);
-
-          let classes = nodes[i].classList;
-          for (let c = 0; c < classes.length; c++)
-            if (!contains("." + classes[c], selectorList))
-              selectorList.push("." + classes[c]);
-        }
-
-        // Extract CSS Rules
-        let rules = [];
-        for (let i = 0; i < document.styleSheets.length; i++) {
-          let s = document.styleSheets[i];
-
-          try {
-            if (!s.cssRules) continue;
-          } catch (e) {
-            if (e.name !== "SecurityError") throw e; // for Firefox
-            continue;
-          }
-
-          let cssRules = s.cssRules;
-          for (let r = 0; r < cssRules.length; r++) {
-            try {
-              let classArray = cssRules[r].selectorText.split(" ");
-
-              for (let i = 0; i < classArray.length; i++) {
-                if (contains(classArray[i], selectorList)) {
-                  let properties = cssRules[r].cssText
-                    .split("{")[1]
-                    .split("}")[0]
-                    .trim()
-                    .split(";");
-                  let styles = new Map();
-                  for (let j = 0; j < properties.length; j++) {
-                    let prop = properties[j].split(":")[0];
-                    let val = properties[j].split(":")[1];
-                    if (prop) styles.set(prop.trim(), val.trim());
-                  }
-                  rules[classArray[i]] = styles;
-                }
-              }
-            } catch (e) {
-              continue;
-            }
-          }
-        }
-
-        return rules;
-      }
-
-      function contains(str, arr) {
-        return arr.indexOf(str) === -1 ? false : true;
-      }
+    saveAsPng(){
+      graphHelper.saveAsPng(d3, "orgchart");
     },
     createPatternify() {
       d3.selection.prototype.patternify = function(params) {
@@ -726,7 +607,7 @@ export default {
 <style scoped>
 .chart-container {
   position: fixed;
-  top: 0;
+  top: 80px;
   left: 0;
   bottom: 0;
   right: 0;
@@ -761,7 +642,7 @@ export default {
 .chart-container >>> .node-foreign-object-div {
   display: flex;
   flex-direction: column;
-  justify-content: end;
+  justify-content: flex-end;
   align-items: center;
   text-align: center;
   font-size: 12pt;

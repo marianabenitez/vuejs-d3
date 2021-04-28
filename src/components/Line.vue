@@ -10,12 +10,23 @@
       @change="selectDataSet"
     ></v-select>
     <div id="gI" class="graph"></div>
+    <v-btn
+      fab
+      dark
+      color="blue"
+      @click="saveAsPng()"
+    >
+      <v-icon dark>
+        mdi-download
+      </v-icon>
+    </v-btn>
   </v-container>
 </template>
 
 <script>
 import * as d3 from "d3";
 import $ from "jquery";
+import graphHelper from "@/helpers/graphHelper.js"
 
 export default {
   data: () => ({
@@ -80,6 +91,9 @@ export default {
     this.createChart("#gI");
   },
   methods: {
+    saveAsPng(){
+      graphHelper.saveAsPng(d3, "linechart");
+    },
     createChart(div) {
       // set the dimensions and margins of the graph
       let margin = { top: 30, right: 30, bottom: 30, left: 30 },
