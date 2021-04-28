@@ -1,5 +1,15 @@
 <template>
   <v-container>
+    <v-btn
+      fab
+      dark
+      color="blue"
+      @click="saveAsPng()"
+    >
+      <v-icon dark>
+        mdi-download
+      </v-icon>
+    </v-btn>
     <div class="chart-container"></div>
   </v-container>
 </template>
@@ -7,6 +17,7 @@
 <script>
 // this OrgChart was adapted from https://bl.ocks.org/bumbeishvili/09a03b81ae788d2d14f750afe59eb7de
 import * as d3 from "d3";
+import graphHelper from "@/helpers/graphHelper.js"
 
 export default {
   data: () => ({
@@ -23,35 +34,39 @@ export default {
     initialZoom: 1,
     allowZoom: true,
     grayscale: true,
-    enableExpand: true,
+    enableExpand: false,
     rendering: {},
     behaviors: {},
     data: [
       {
         id: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
         parentId: null,
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name One",
         jobTitle: "Job Title 1",
       },
       {
         id: "5a89746a-e26f-43e0-8675-e821c1924088",
         parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Two",
         jobTitle: "Job Title 2",
       },
       {
         id: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
         parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Three",
         jobTitle: "Job Title 3",
       },
       {
         id: "8f805290-3c86-4a1c-aef7-0ef1faddd0fb",
         parentId: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
-        imageUrl: "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        imageUrl:
+          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
         name: "Name Four",
         jobTitle: "Job Title 4",
       },
@@ -62,6 +77,9 @@ export default {
     this.createChart(this.data);
   },
   methods: {
+    saveAsPng(){
+      graphHelper.saveAsPng(d3, "orgchart");
+    },
     createPatternify() {
       d3.selection.prototype.patternify = function(params) {
         let data = params.data || [params.selector];
@@ -381,12 +399,9 @@ export default {
         data: (d) => [d],
       })
         .style("width", `${this.node.width}px`)
-        .style("height", `${this.node.height}px`)
-        .style("display", "grid")
-        .style("grid-template-rows", `${this.image.height}px auto`)
+        .style("height", `${this.node.height-20}px`)
         .html(
-          (d) =>
-            `<div class="node-text-area"><b>${d.data.name}</b><br/>${d.data.jobTitle}</div>`
+          (d) => `<div><b>${d.data.name}</b></div><div>${d.data.jobTitle}</div>`
         );
 
       // Node images
@@ -592,7 +607,7 @@ export default {
 <style scoped>
 .chart-container {
   position: fixed;
-  top: 0;
+  top: 80px;
   left: 0;
   bottom: 0;
   right: 0;
@@ -613,18 +628,6 @@ export default {
 .chart-container >>> .node-rect {
   fill: white;
 }
-.chart-container >>> .node-text-area {
-  grid-row-start: 2;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin: auto;
-  text-align: center;
-  font-size: 12pt;
-  padding-left: 3px;
-  padding-right: 3px;
-}
 .chart-container >>> .node-button-circle {
   fill: white;
   stroke: rgb(26, 26, 26);
@@ -635,6 +638,14 @@ export default {
   font-size: 16pt;
   font-weight: bold;
   font-family: "Courier New", Courier, monospace;
+}
+.chart-container >>> .node-foreign-object-div {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  font-size: 12pt;
 }
 .chart-container >>> .grayscale {
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
