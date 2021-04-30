@@ -1,23 +1,18 @@
 <template>
   <v-container>
-    <v-btn
-      fab
-      dark
-      color="blue"
-      @click="saveAsPng()"
-    >
+    <div class="chart-container"></div>
+    <v-btn fab dark color="blue" @click="saveAsPng()">
       <v-icon dark>
         mdi-download
       </v-icon>
     </v-btn>
-    <div class="chart-container"></div>
   </v-container>
 </template>
 
 <script>
 // this OrgChart was adapted from https://bl.ocks.org/bumbeishvili/09a03b81ae788d2d14f750afe59eb7de
 import * as d3 from "d3";
-import graphHelper from "@/helpers/graphHelper.js"
+import graphHelper from "@/helpers/graphHelper.js";
 
 export default {
   data: () => ({
@@ -33,7 +28,7 @@ export default {
     },
     initialZoom: 1,
     allowZoom: true,
-    grayscale: true,
+    grayscale: false,
     enableExpand: false,
     rendering: {},
     behaviors: {},
@@ -77,7 +72,7 @@ export default {
     this.createChart(this.data);
   },
   methods: {
-    saveAsPng(){
+    saveAsPng() {
       graphHelper.saveAsPng(d3, "orgchart");
     },
     createPatternify() {
@@ -399,9 +394,13 @@ export default {
         data: (d) => [d],
       })
         .style("width", `${this.node.width}px`)
-        .style("height", `${this.node.height-20}px`)
+        .style("height", `${this.node.height}px`)
+        .style("grid-template-rows", `${this.image.height}px auto auto`)
         .html(
-          (d) => `<div><b>${d.data.name}</b></div><div>${d.data.jobTitle}</div>`
+          (
+            d
+          ) => `<div style="grid-row-start: 2; margin-top: auto;"><b>${d.data.name}</b></div>
+          <div style="grid-row-start: 3; margin-bottom: auto;">${d.data.jobTitle}</div>`
         );
 
       // Node images
@@ -607,7 +606,7 @@ export default {
 <style scoped>
 .chart-container {
   position: fixed;
-  top: 80px;
+  top: 0;
   left: 0;
   bottom: 0;
   right: 0;
@@ -640,9 +639,9 @@ export default {
   font-family: "Courier New", Courier, monospace;
 }
 .chart-container >>> .node-foreign-object-div {
-  display: flex;
+  display: grid;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
   text-align: center;
   font-size: 12pt;

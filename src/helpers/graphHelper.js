@@ -1,4 +1,3 @@
-import $ from "jquery";
 import { saveSvgAsPng } from "save-svg-as-png";
 
 var graphHelper = (function() {
@@ -69,9 +68,7 @@ var graphHelper = (function() {
 
       function handleInlineCSS(element, styles, add) {
         // all element's classes
-        let classArray = $(element)
-          .attr("class")
-          .split(" ");
+        let classArray = element.classList;
 
         for (let i = 0; i < classArray.length; i++) {
           let index = Object.keys(styles).indexOf(`.${classArray[i]}`);
