@@ -32,44 +32,65 @@ export default {
     enableExpand: false,
     rendering: {},
     behaviors: {},
-    data: [
-      {
-        id: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        parentId: null,
-        imageUrl:
-          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
-        name: "Name One",
-        jobTitle: "Job Title 1",
-      },
-      {
-        id: "5a89746a-e26f-43e0-8675-e821c1924088",
-        parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl:
-          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
-        name: "Name Two",
-        jobTitle: "Job Title 2",
-      },
-      {
-        id: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
-        parentId: "0bf326d0-3c9e-474a-a583-88f733a7cce5",
-        imageUrl:
-          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
-        name: "Name Three",
-        jobTitle: "Job Title 3",
-      },
-      {
-        id: "8f805290-3c86-4a1c-aef7-0ef1faddd0fb",
-        parentId: "1517a3cc-9b9c-4c2b-ba8c-47b1e58ed4d0",
-        imageUrl:
-          "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
-        name: "Name Four",
-        jobTitle: "Job Title 4",
-      },
-    ],
+    data: {
+      hierarchy: [
+        {
+          id: "2f9631bd-62cb-4453-9088-106fece58ea3",
+          parentId: null,
+          name: "Name One",
+          jobTitle: "Manager 1",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },
+        {
+          id: "b8b48007-2030-43f5-a4a2-0c125ad90653",
+          parentId: "2f9631bd-62cb-4453-9088-106fece58ea3",
+          name: "Name Three",
+          jobTitle: "Job Title 3",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },        
+        {
+          id: "cac64575-6237-4622-9aba-2cafe76688cf",
+          parentId: "2f9631bd-62cb-4453-9088-106fece58ea3",
+          name: "Name Four",
+          jobTitle: "Job Title 4",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },
+        {
+          id: "3d61246c-2dd5-498a-a498-75fa7831c73d",
+          parentId: "2f9631bd-62cb-4453-9088-106fece58ea3",
+          name: "Name Five",
+          jobTitle: "Job Title 5",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },
+        {
+          id: "a259d31c-18f5-45a1-81c8-246c5a8a0ad7",
+          parentId: "cac64575-6237-4622-9aba-2cafe76688cf",
+          name: "Name Six",
+          jobTitle: "Job Title 6",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },
+      ],
+      otherHeads: [
+        {
+          id: "79cdb87c-3d6a-4d1c-9baa-5b5bb968fbdd",
+          parentId: null,
+          name: "Name Two",
+          jobTitle: "Manager 2",
+          imageUrl:
+            "https://raw.githubusercontent.com/bumbeishvili/Assets/master/Projects/D3/Organization%20Chart/general.jpg",
+        },
+      ],
+      headCount: 2,
+    },
   }),
   mounted() {
     this.createPatternify();
-    this.createChart(this.data);
+    this.createChart(this.data.hierarchy);
   },
   methods: {
     saveAsPng() {
@@ -115,7 +136,7 @@ export default {
         .nodeSize([this.node.width, this.node.height])
         .separation(function(a, b) {
           return a.parent == vm.rendering.root && b.parent == vm.rendering.root
-            ? 2
+            ? 1
             : 1;
         });
       this.behaviors.zoom = d3.zoom().on("zoom", this.zoomed);
@@ -250,6 +271,45 @@ export default {
       // Set constant depth for each nodes
       nodes.forEach((d) => (d.y = d.depth * this.rendering.depth));
 
+      //#region [ Other Heads ]
+
+      if (this.data.otherHeads) {
+        // Calculate final position of first head
+        let xFirstHead = 0;
+        nodes.filter((head) => {
+          if (head.parent == null) {
+            xFirstHead =
+              head.x - this.data.otherHeads.length * (this.node.width / 2);
+
+            // Set prop that will be used to move the first head to the side (in case there are more heads)
+            // This will be done after the links are created in the correct place
+            head.xTransition = xFirstHead;
+          }
+        });
+
+        // Set start position of all heads
+        let x = 0 + xFirstHead;
+
+        // Add other heads
+        for (let i = 0; i < this.data.otherHeads.length; i++) {
+          let head = this.data.otherHeads[i];
+          // Set position of the current head
+          x = x + this.node.width;
+          nodes.push({
+            id: head.id,
+            parent: null,
+            data: head,
+            height: 0,
+            depth: 0,
+            x: x,
+            y: 0,
+            otherHead: true,
+          });
+        }
+      }
+
+      //#endregion [ Other Heads ]
+
       //#region [ Filters ]
 
       let defs = this.rendering.svg.patternify({
@@ -355,8 +415,11 @@ export default {
       let nodeEnter = nodesSelection
         .enter()
         .append("g")
-        .attr("class", "node")
-        .attr("transform", () => `translate(${source.x0},${source.y0})`)
+        .attr("class", (d) => {
+          if (d.parent == null) return "node head";
+          else return "node";
+        })
+        .attr("transform", () => `translate(${source.x0}, ${source.y0})`)
         .attr("cursor", "default")
         .on("click", (d) => {
           this.onNodeClick(d3.select(d.target).data()[0].data.id);
@@ -372,7 +435,11 @@ export default {
           selector: "node-rect",
           data: (d) => [d],
         })
-        .attr("width", 1e-6)
+        .style("width", (d) => {
+          if (d.parent == null && !d.otherHead)
+            return `${this.node.width * this.data.headCount}px`;
+          else return `${this.node.width}px`;
+        })
         .attr("height", 1e-6);
 
       // Add foreignObject element
@@ -396,12 +463,7 @@ export default {
         .style("width", `${this.node.width}px`)
         .style("height", `${this.node.height}px`)
         .style("grid-template-rows", `${this.image.height}px auto auto`)
-        .html(
-          (
-            d
-          ) => `<div style="grid-row-start: 2; margin-top: auto;"><b>${d.data.name}</b></div>
-          <div style="grid-row-start: 3; margin-bottom: auto;">${d.data.jobTitle}</div>`
-        );
+        .html((d) => this.employeeInfo(d.data));
 
       // Node images
       let nodeImageGroups = nodeEnter.patternify({
@@ -454,7 +516,12 @@ export default {
         .transition()
         .attr("opacity", 0)
         .duration(this.duration)
-        .attr("transform", (d) => `translate(${d.x},${d.y})`)
+        .attr("transform", (d) => {
+          if (d.parent == null && !d.otherHead)
+            return `translate(${d.xTransition}, ${d.y})`;
+          // move the first head to the side to make space for the other heads
+          else return `translate(${d.x}, ${d.y})`;
+        })
         .attr("opacity", 1);
 
       // Move images to desired positions
@@ -599,6 +666,16 @@ export default {
     onNodeClick(d) {
       console.log(d);
     },
+    employeeInfo(data) {
+      return `<div style="grid-row-start: 2; margin-top: auto;"><b>${
+        data.name
+      }</b></div>
+          <div style="grid-row-start: 3; margin-bottom: auto;"><div>${
+            data.jobTitle.includes(",")
+              ? data.jobTitle.replace(/, /g, ",</div><div>")
+              : data.jobTitle
+          }</div></div>`;
+    },
   },
 };
 </script>
@@ -637,6 +714,9 @@ export default {
   font-size: 16pt;
   font-weight: bold;
   font-family: "Courier New", Courier, monospace;
+}
+.chart-container >>> .node-foreign-object {
+  display: ruby;
 }
 .chart-container >>> .node-foreign-object-div {
   display: grid;
