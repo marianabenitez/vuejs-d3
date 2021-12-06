@@ -273,33 +273,39 @@ export default {
 
       //#region [ Other Heads ]
 
-      // Calculate final position of first head
-      let xFirstHead = 0;
-      nodes.filter((head) => {
-        if (head.parent == null) {
-          xFirstHead =
-            head.x - this.data.otherHeads.length * (this.node.width / 2);
-        }
-      });
+      if (this.data.otherHeads) {
+        // Calculate final position of first head
+        let xFirstHead = 0;
+        nodes.filter((head) => {
+          if (head.parent == null) {
+            xFirstHead =
+              head.x - this.data.otherHeads.length * (this.node.width / 2);
 
-      // Set start position of all heads
-      let x = 0 + xFirstHead;
-
-      // Add other heads
-      for (let i = 0; i < this.data.otherHeads.length; i++) {
-        let head = this.data.otherHeads[i];
-        // Set position of the current head
-        x = x + this.node.width;
-        nodes.push({
-          id: head.id,
-          parent: null,
-          data: head,
-          height: 0,
-          depth: 0,
-          x: x,
-          y: 0,
-          otherHead: true,
+            // Set prop that will be used to move the first head to the side (in case there are more heads)
+            // This will be done after the links are created in the correct place
+            head.xTransition = xFirstHead;
+          }
         });
+
+        // Set start position of all heads
+        let x = 0 + xFirstHead;
+
+        // Add other heads
+        for (let i = 0; i < this.data.otherHeads.length; i++) {
+          let head = this.data.otherHeads[i];
+          // Set position of the current head
+          x = x + this.node.width;
+          nodes.push({
+            id: head.id,
+            parent: null,
+            data: head,
+            height: 0,
+            depth: 0,
+            x: x,
+            y: 0,
+            otherHead: true,
+          });
+        }
       }
 
       //#endregion [ Other Heads ]
@@ -512,8 +518,8 @@ export default {
         .duration(this.duration)
         .attr("transform", (d) => {
           if (d.parent == null && !d.otherHead)
-            return `translate(${d.x -
-              this.data.otherHeads.length * (this.node.width / 2)}, ${d.y})`;
+            return `translate(${d.xTransition}, ${d.y})`;
+          // move the first head to the side to make space for the other heads
           else return `translate(${d.x}, ${d.y})`;
         })
         .attr("opacity", 1);
